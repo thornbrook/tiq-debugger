@@ -13,12 +13,8 @@ function createOutput() {
     // CSS
     d.innerHTML +=
     '<style>' +
-      '#utag_debugger { background:lightskyblue;padding:15px; }' +
-      '#utag_debugger #message { background:lightsalmon;font-weight: bold; }'
+      '#utag_debugger { background:lightskyblue;padding:15px; }'
     '</style>';
-
-    // Top Message
-    d.innerHTML += '<div id="message"></div>';
 
     // Event Counts
     d.innerHTML += '<div><strong>Views:</strong> <span id="utag_view_count">0</span></div>';
