@@ -46,18 +46,26 @@ function activate_debug() {
   }
 }
 
-function cp(src, dst, c, d) {
-  dst = {};
-  for (c in src) {
-    if (src.hasOwnProperty(c) && typeof src[c] != "function") {
-      if (src[c] instanceof Array) {
-        dst[c] = src[c].slice(0);
+function copyEventData(b, copiedData, key, d) {
+  copiedData = {};
+  for (key in b) {
+    if (b.hasOwnProperty(key) && typeof b[key] != "function") {
+      if (b[key] instanceof Array) {
+        copiedData[key] = b[key].slice(0);
       } else {
-        dst[c] = src[c];
+        copiedData[key] = b[key];
       }
     }
   }
-  return dst;
+  // OPTIONAL: Convert all values to strings
+  for (var i = 0; i < Object.keys(copiedData).length; i++) {
+    if(typeof copiedData[Object.keys(copiedData)[i]] != "undefined") {
+      //copiedData[Object.keys(copiedData)[i]] = copiedData[Object.keys(copiedData)[i]].toString();
+      copiedData[Object.keys(copiedData)[i]] = JSON.stringify(copiedData[Object.keys(copiedData)[i]]);
+    }
+  }
+
+  return copiedData;
 }
 
 function get_utag_version() {
@@ -102,10 +110,10 @@ function is_event_object(e, o, prev) {
 function get_static_events(preserve_log) {
   var this_event_list;
   if (preserve_log) {
-    udb("static list: preserve log");
+    //udb("static list: preserve log");
     this_event_list = window.static_event_list;
   } else {
-    udb("static list: no preserve log");
+    //udb("static list: no preserve log");
     this_event_list = [];
   }
   document.getElementById("utag_view_count").innerHTML = "0";
@@ -118,7 +126,7 @@ function get_static_events(preserve_log) {
   ) {
     var ev = new Object();
     if (preserve_log) window.opener.utag.data["_preserved"] = true;
-    ev.data = cp(window.opener.utag.data);
+    ev.data = copyEventData(window.opener.utag.data);
     ev.code = "utag_view";
     ev.method = "utag.data";
     ev.url = window.opener.document.URL || "";
@@ -138,13 +146,13 @@ function get_live_events(utag_view, utag_link, preserve_log) {
 
   var this_event_list = [];
   if (preserve_log) {
-    udb("event list: preserve log");
+    //udb("event list: preserve log");
     this_event_list = window.event_history;
     for (var i = 0; i < this_event_list.length; i++) {
       this_event_list[i].hidden = false;
     }
   } else {
-    udb("event list: no preserve log");
+    //udb("event list: no preserve log");
     this_event_list = [];
   }
   if (this_event_list.length == 0) {
@@ -163,42 +171,52 @@ function get_live_events(utag_view, utag_link, preserve_log) {
           (window.is_first_run || !l["_preserved"]) &&
           is_event_object("view", l, prev)
         ) {
-          udb("utag.view event found");
           l["_preserved"] = true;
           var ev = new Object();
-          ev.data = cp(l);
+          ev.data = copyEventData(l);
           ev.code = "utag_view";
           ev.method = "utag.view";
           ev.url = window.opener.document.URL || "";
           this_event_list[this_event_list.length] = ev;
           document.getElementById("utag_view_count").innerHTML++;
+          // udb(ev.method + " event found: " + ev.data["tealium_event"]);
+          var consoleGrouping = "UTAG DEBUGGER: " + ev.method + " event found: " + ev.data["tealium_event"];
+          console.groupCollapsed(consoleGrouping);
+          console.table(ev.data);
+          console.groupEnd(consoleGrouping);
         }
         if (
           typeof l == "object" &&
           (window.is_first_run || !l["_preserved"]) &&
           is_event_object("link", l, prev)
         ) {
-          udb("utag.link event found");
           l["_preserved"] = true;
           var ev = new Object();
-          ev.data = cp(l);
+          ev.data = copyEventData(l);
           ev.code = "utag_link";
           ev.method = "utag.link";
           ev.url = window.opener.document.URL || "";
           this_event_list[this_event_list.length] = ev;
           document.getElementById("utag_link_count").innerHTML++;
+          // udb("utag.link event found: " + ev.data["tealium_event"]);
+          var consoleGrouping = "UTAG DEBUGGER: " + ev.method + " event found: " + ev.data["tealium_event"];
+          console.groupCollapsed(consoleGrouping);
+          console.table(ev.data);
+          console.groupEnd(consoleGrouping);
         }
         prev = l;
       }
     }
   }
-  for (var i = 0; i < this_event_list.length; i++) {
-    var m = this_event_list[i].method;
-    if (!window[m] && m != "utag.data") {
-      udb("event is hidden");
-      this_event_list[i].hidden = true;
-    }
-  }
+  // Hidden event attribute ?
+  // Is this for UI hiding maybe?
+  // for (var i = 0; i < this_event_list.length; i++) {
+  //   var m = this_event_list[i].method;
+  //   if (!window[m] && m != "utag.data") {
+  //     udb("event is hidden");
+  //     this_event_list[i].hidden = true;
+  //   }
+  // }
   var rv = this_event_list.slice(0);
   if (window.static_event_list.length > 0) {
     rv.unshift(static_event_list[0]);
@@ -214,18 +232,24 @@ function hijack_track() {
     utag._dbtrack(a,b,c,d);
     setTimeout(function(){
       window.tiq_db_update();
-    }, 500);
+    },1000);
   };
 }
 
 window.tiq_db_update = function () {
   udb("UPDATE CALLED");
   var events = get_live_events(null,null,true);
+  udb(events);
   if(event_history.length === 0) {
     setTimeout(function (){
       udb("POLLING FOR FIRST EVENT");
       window.tiq_db_update();
     },1000);
+  }
+  else {
+    // TODO: See if this causes issues
+    // Flush the db_log
+    window.opener.utag.db_log = [];
   }
 }
 
@@ -242,7 +266,7 @@ function init() {
     udb("utag is not ready.");
     setTimeout(function (){
       init();
-    },500)
+    },1000);
   }
 }
 init();
