@@ -1,18 +1,32 @@
 window.opener = window.opener || window;
-window.our_event_list = [];
+window.event_history = [];
 window.static_event_list = [];
 window.utagmondb = true;
 window.is_first_run = true;
 
-if(!document.getElementById("utag_debugger")) {
-  var d = document.createElement("div");
-  d.id = "utag_debugger";
-  document.body.prepend(d);
-  d.innerHTML += '<style>' +
-    '#utag_debugger { background:lightskyblue }'
-  '</style>';
-  d.innerHTML += '<div>Views: <span id="utag_view_count"></span></div><div>Links: <span id="utag_link_count"></span></div></div>';
+function createOutput() {
+  if(!document.getElementById("utag_debugger")) {
+    var d = document.createElement("div");
+    d.id = "utag_debugger";
+    document.body.prepend(d);
+
+    // CSS
+    d.innerHTML +=
+    '<style>' +
+      '#utag_debugger { background:lightskyblue;padding:15px; }' +
+      '#utag_debugger #message { background:lightsalmon;font-weight: bold; }'
+    '</style>';
+
+    // Top Message
+    d.innerHTML += '<div id="message"></div>';
+
+    // Event Counts
+    d.innerHTML += '<div><strong>Views:</strong> <span id="utag_view_count">0</span></div>';
+    d.innerHTML += '<div><strong>Links:</strong> <span id="utag_link_count">0</span></div>';
+
+  }
 }
+
 
 function udb(a) {
   if (window.utagmondb === false) {
@@ -123,13 +137,13 @@ function get_live_events(utag_view, utag_link, preserve_log) {
   udb("GET LIVE EVENTS");
 
   if(window.is_first_run) {
-    get_static_events();
+    get_static_events(true);
   }
 
   var this_event_list = [];
   if (preserve_log) {
     udb("event list: preserve log");
-    this_event_list = window.our_event_list;
+    this_event_list = window.event_history;
     for (var i = 0; i < this_event_list.length; i++) {
       this_event_list[i].hidden = false;
     }
@@ -210,14 +224,29 @@ function hijack_track() {
 
 window.tiq_db_update = function () {
   udb("UPDATE CALLED");
-  get_live_events(null,null,true);
+  var events = get_live_events(null,null,true);
+  if(event_history.length === 0) {
+    setTimeout(function (){
+      udb("POLLING FOR FIRST EVENT");
+      window.tiq_db_update();
+    },1000);
+  }
 }
 
 function init() {
-  if(window.is_first_run) {
-    activate_debug();
-    hijack_track();
+  createOutput();
+  if(typeof window.opener.utag != "undefined" && typeof window.opener.utag.cfg != "undefined") {
+    if (window.is_first_run) {
+      activate_debug();
+      hijack_track();
+    }
+    window.tiq_db_update();
   }
-  window.tiq_db_update();
+  else {
+    udb("utag is not ready.");
+    setTimeout(function (){
+      init();
+    },500)
+  }
 }
 init();
