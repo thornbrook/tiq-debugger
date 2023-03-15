@@ -25,9 +25,15 @@ function udb(a) {
   }
 }
 
+udb("INITIALISED");
+
 function activate_debug() {
-  window.opener.document.cookie = "utagdb=true;path=/";
-  window.opener.utag.cfg["utagdb"] = true;
+  if(!window.opener.utag.cfg["utagdb"]) {
+    window.opener.document.cookie = "utagdb=true;path=/";
+    window.opener.utag.cfg["utagdb"] = true;
+    window.alert("Tealium debug mode cookie 'utagdb' has not been set. \nPage needs to reload to turn Tealium debug mode on.");
+    window.opener.location.reload();
+  }
 }
 
 function cp(src, dst, c, d) {
@@ -114,6 +120,8 @@ function get_static_events(preserve_log) {
 
 function get_live_events(utag_view, utag_link, preserve_log) {
 
+  udb("GET LIVE EVENTS");
+
   if(window.is_first_run) {
     get_static_events();
   }
@@ -189,4 +197,27 @@ function get_live_events(utag_view, utag_link, preserve_log) {
   return rv;
 }
 
-get_live_events(null,null,true);
+function hijack_track() {
+  var utag = window.utag;
+  utag._dbtrack = utag.track;
+  utag.track = function(a,b,c,d){
+    utag._dbtrack(a,b,c,d);
+    setTimeout(function(){
+      window.tiq_db_update();
+    }, 500);
+  };
+}
+
+window.tiq_db_update = function () {
+  udb("UPDATE CALLED");
+  get_live_events(null,null,true);
+}
+
+function init() {
+  if(window.is_first_run) {
+    activate_debug();
+    hijack_track();
+  }
+  window.tiq_db_update();
+}
+init();
