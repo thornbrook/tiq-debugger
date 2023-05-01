@@ -4,23 +4,26 @@ window.static_event_list = [];
 window.utagmondb = true;
 window.is_first_run = true;
 
-function createOutput() {
-  if(!document.getElementById("utag_debugger")) {
-    var d = document.createElement("div");
-    d.id = "utag_debugger";
-    document.body.prepend(d);
-
-    // CSS
-    d.innerHTML +=
-    '<style>' +
-      '#utag_debugger { background:lightskyblue;padding:15px; }'
-    '</style>';
-
-    // Event Counts
-    d.innerHTML += '<div><strong>Views:</strong> <span id="utag_view_count">0</span></div>';
-    d.innerHTML += '<div><strong>Links:</strong> <span id="utag_link_count">0</span></div>';
-
-  }
+// TODO: HTML Output to show onscreen instead of in console
+function renderOutput(views,links) {
+  // if(!document.getElementById("utag_debugger")) {
+  //   var d = document.createElement("div");
+  //   d.id = "utag_debugger";
+  //   document.body.prepend(d);
+  //
+  //   // CSS
+  //   d.innerHTML +=
+  //   '<style>' +
+  //     '#utag_debugger { background:lightskyblue;padding:15px; }'
+  //   '</style>';
+  //
+  //   // Event Counts
+  //   d.innerHTML += '<div><strong>Views:</strong> <span id="utag_view_count"></span></div>';
+  //   d.innerHTML += '<div><strong>Links:</strong> <span id="utag_link_count"></span></div>';
+  //
+  // }
+  // document.getElementById("utag_view_count").innerHTML = views;
+  // document.getElementById("utag_link_count").innerHTML = links;
 }
 
 
@@ -118,14 +121,10 @@ function is_event_object(e, o, prev) {
 function get_static_events(preserve_log) {
   var this_event_list;
   if (preserve_log) {
-    //udb("static list: preserve log");
     this_event_list = window.static_event_list;
   } else {
-    //udb("static list: no preserve log");
     this_event_list = [];
   }
-  document.getElementById("utag_view_count").innerHTML = "0";
-  document.getElementById("utag_link_count").innerHTML = "0";
   if (
     window.opener &&
     window.opener.utag &&
@@ -139,7 +138,6 @@ function get_static_events(preserve_log) {
     ev.method = "utag.data";
     ev.url = window.opener.document.URL || "";
     this_event_list[this_event_list.length] = ev;
-    document.getElementById("utag_view_count").innerHTML++;
   }
   return this_event_list.slice(0);
 }
@@ -152,18 +150,14 @@ function get_live_events(utag_view, utag_link, preserve_log) {
 
   var this_event_list = [];
   if (preserve_log) {
-    //udb("event list: preserve log");
     this_event_list = window.event_history;
     for (var i = 0; i < this_event_list.length; i++) {
       this_event_list[i].hidden = false;
     }
   } else {
-    //udb("event list: no preserve log");
     this_event_list = [];
   }
   if (this_event_list.length == 0) {
-    document.getElementById("utag_view_count").innerHTML = "0";
-    document.getElementById("utag_link_count").innerHTML = "0";
   }
   if (window.opener) {
     if (window.opener.utag && typeof window.opener.utag.db_log == "object") {
@@ -180,12 +174,9 @@ function get_live_events(utag_view, utag_link, preserve_log) {
           l["tealium_preserved"] = true;
           var ev = new Object();
           ev.data = copyEventData(l);
-          // ev.code = "utag_view";
           ev.method = "view";
           ev.url = window.opener.document.URL || "";
           this_event_list[this_event_list.length] = ev;
-          document.getElementById("utag_view_count").innerHTML++;
-          // udb(ev.method + " event found: " + ev.data["tealium_event"]);
           var consoleGrouping = "UTAG DEBUGGER: " + "tealium_event = " + ev.data["tealium_event"] + " (" + ev.method + ")";
           console.groupCollapsed(consoleGrouping);
           console.table(ev.data);
@@ -199,12 +190,9 @@ function get_live_events(utag_view, utag_link, preserve_log) {
           l["tealium_preserved"] = true;
           var ev = new Object();
           ev.data = copyEventData(l);
-          // ev.code = "utag_link";
           ev.method = "link";
           ev.url = window.opener.document.URL || "";
           this_event_list[this_event_list.length] = ev;
-          document.getElementById("utag_link_count").innerHTML++;
-          // udb("utag.link event found: " + ev.data["tealium_event"]);
           var consoleGrouping = "UTAG DEBUGGER: " + "tealium_event = " + ev.data["tealium_event"] + " (" + ev.method + ")";
           console.groupCollapsed(consoleGrouping);
           console.table(ev.data);
@@ -260,7 +248,7 @@ window.tiq_db_update = function () {
 }
 
 function init() {
-  createOutput();
+  // createOutput();
   if(typeof window.opener.utag != "undefined" && typeof window.opener.utag.cfg != "undefined") {
     if (window.is_first_run) {
       activate_debug();
