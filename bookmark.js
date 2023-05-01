@@ -57,11 +57,19 @@ function copyEventData(b, copiedData, key, d) {
       }
     }
   }
+  // Sort Keys Alphabetically
+  copiedData = Object.keys(copiedData)
+    .sort()
+    .reduce(function (data, key) {
+      data[key] = copiedData[key];
+      return data;
+    }, {});
+
   // OPTIONAL: Convert all values to strings
   for (var i = 0; i < Object.keys(copiedData).length; i++) {
     if(typeof copiedData[Object.keys(copiedData)[i]] != "undefined") {
-      //copiedData[Object.keys(copiedData)[i]] = copiedData[Object.keys(copiedData)[i]].toString();
-      copiedData[Object.keys(copiedData)[i]] = JSON.stringify(copiedData[Object.keys(copiedData)[i]]);
+      var d_type = typeof copiedData[Object.keys(copiedData)[i]];
+      if(d_type!=="string") copiedData[Object.keys(copiedData)[i]] = JSON.stringify(copiedData[Object.keys(copiedData)[i]]);
     }
   }
 
@@ -122,10 +130,10 @@ function get_static_events(preserve_log) {
     window.opener &&
     window.opener.utag &&
     typeof window.opener.utag.data != "undefined" &&
-    (!preserve_log || (preserve_log && !window.opener.utag.data["_preserved"]))
+    (!preserve_log || (preserve_log && !window.opener.utag.data["tealium_preserved"]))
   ) {
     var ev = new Object();
-    if (preserve_log) window.opener.utag.data["_preserved"] = true;
+    if (preserve_log) window.opener.utag.data["tealium_preserved"] = true;
     ev.data = copyEventData(window.opener.utag.data);
     ev.code = "utag_view";
     ev.method = "utag.data";
@@ -137,8 +145,6 @@ function get_static_events(preserve_log) {
 }
 
 function get_live_events(utag_view, utag_link, preserve_log) {
-
-  udb("GET LIVE EVENTS");
 
   if(window.is_first_run) {
     get_static_events(true);
@@ -168,38 +174,38 @@ function get_live_events(utag_view, utag_link, preserve_log) {
         var l = window.opener.utag.db_log[event_num];
         if (
           typeof l == "object" &&
-          (window.is_first_run || !l["_preserved"]) &&
+          (window.is_first_run || !l["tealium_preserved"]) &&
           is_event_object("view", l, prev)
         ) {
-          l["_preserved"] = true;
+          l["tealium_preserved"] = true;
           var ev = new Object();
           ev.data = copyEventData(l);
-          ev.code = "utag_view";
-          ev.method = "utag.view";
+          // ev.code = "utag_view";
+          ev.method = "view";
           ev.url = window.opener.document.URL || "";
           this_event_list[this_event_list.length] = ev;
           document.getElementById("utag_view_count").innerHTML++;
           // udb(ev.method + " event found: " + ev.data["tealium_event"]);
-          var consoleGrouping = "UTAG DEBUGGER: " + ev.method + " event found: " + ev.data["tealium_event"];
+          var consoleGrouping = "UTAG DEBUGGER: " + "tealium_event = " + ev.data["tealium_event"] + " (" + ev.method + ")";
           console.groupCollapsed(consoleGrouping);
           console.table(ev.data);
           console.groupEnd(consoleGrouping);
         }
         if (
           typeof l == "object" &&
-          (window.is_first_run || !l["_preserved"]) &&
+          (window.is_first_run || !l["tealium_preserved"]) &&
           is_event_object("link", l, prev)
         ) {
-          l["_preserved"] = true;
+          l["tealium_preserved"] = true;
           var ev = new Object();
           ev.data = copyEventData(l);
-          ev.code = "utag_link";
-          ev.method = "utag.link";
+          // ev.code = "utag_link";
+          ev.method = "link";
           ev.url = window.opener.document.URL || "";
           this_event_list[this_event_list.length] = ev;
           document.getElementById("utag_link_count").innerHTML++;
           // udb("utag.link event found: " + ev.data["tealium_event"]);
-          var consoleGrouping = "UTAG DEBUGGER: " + ev.method + " event found: " + ev.data["tealium_event"];
+          var consoleGrouping = "UTAG DEBUGGER: " + "tealium_event = " + ev.data["tealium_event"] + " (" + ev.method + ")";
           console.groupCollapsed(consoleGrouping);
           console.table(ev.data);
           console.groupEnd(consoleGrouping);
@@ -232,19 +238,19 @@ function hijack_track() {
     utag._dbtrack(a,b,c,d);
     setTimeout(function(){
       window.tiq_db_update();
-    },1000);
+    },300);
   };
 }
 
 window.tiq_db_update = function () {
   udb("UPDATE CALLED");
   var events = get_live_events(null,null,true);
-  udb(events);
+  //udb(events);
   if(event_history.length === 0) {
     setTimeout(function (){
       udb("POLLING FOR FIRST EVENT");
       window.tiq_db_update();
-    },1000);
+    },300);
   }
   else {
     // TODO: See if this causes issues
@@ -266,7 +272,7 @@ function init() {
     udb("utag is not ready.");
     setTimeout(function (){
       init();
-    },1000);
+    },300);
   }
 }
 init();
