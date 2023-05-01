@@ -3,6 +3,7 @@ window.event_history = [];
 window.static_event_list = [];
 window.utagmondb = true;
 window.is_first_run = true;
+window.udb_prefix = "WX TEALIUM DEBUGGER:"
 
 // TODO: HTML Output to show onscreen instead of in console
 function renderOutput(views,links) {
@@ -33,7 +34,7 @@ function udb(a) {
   }
   if (window.utagmondb === true) {
     try {
-      console.log("UTAG DEBUGGER:",a);
+      console.log(udb_prefix,a);
     } catch (e) {}
   }
 }
@@ -175,7 +176,7 @@ function get_live_events(utag_view, utag_link, preserve_log) {
           ev.method = "view";
           ev.url = window.opener.document.URL || "";
           this_event_list[this_event_list.length] = ev;
-          var consoleGrouping = "UTAG DEBUGGER: " + "tealium_event = " + ev.data["tealium_event"] + " (" + ev.method + ")";
+          var consoleGrouping = udb_prefix + " tealium_event = " + ev.data["tealium_event"] + " (" + ev.method + ")";
           console.groupCollapsed(consoleGrouping);
           console.table(ev.data);
           console.groupEnd(consoleGrouping);
@@ -191,7 +192,7 @@ function get_live_events(utag_view, utag_link, preserve_log) {
           ev.method = "link";
           ev.url = window.opener.document.URL || "";
           this_event_list[this_event_list.length] = ev;
-          var consoleGrouping = "UTAG DEBUGGER: " + "tealium_event = " + ev.data["tealium_event"] + " (" + ev.method + ")";
+          var consoleGrouping = udb_prefix + " tealium_event = " + ev.data["tealium_event"] + " (" + ev.method + ")";
           console.groupCollapsed(consoleGrouping);
           console.table(ev.data);
           console.groupEnd(consoleGrouping);
