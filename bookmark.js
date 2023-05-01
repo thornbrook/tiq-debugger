@@ -33,7 +33,7 @@ function udb(a) {
   }
   if (window.utagmondb === true) {
     try {
-      console.log("UTAG DEBUGGER: ",a);
+      console.log("UTAG DEBUGGER:",a);
     } catch (e) {}
   }
 }
@@ -157,8 +157,6 @@ function get_live_events(utag_view, utag_link, preserve_log) {
   } else {
     this_event_list = [];
   }
-  if (this_event_list.length == 0) {
-  }
   if (window.opener) {
     if (window.opener.utag && typeof window.opener.utag.db_log == "object") {
       var prev;
@@ -215,6 +213,7 @@ function get_live_events(utag_view, utag_link, preserve_log) {
   if (window.static_event_list.length > 0) {
     rv.unshift(static_event_list[0]);
   }
+
   window.is_first_run = false;
   return rv;
 }
@@ -231,7 +230,7 @@ function hijack_track() {
 }
 
 window.tiq_db_update = function () {
-  udb("UPDATE CALLED");
+  // udb("UPDATE CALLED");
   var events = get_live_events(null,null,true);
   //udb(events);
   if(event_history.length === 0) {
