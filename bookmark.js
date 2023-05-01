@@ -226,7 +226,7 @@ function hijack_track() {
     utag._dbtrack(a,b,c,d);
     setTimeout(function(){
       window.tiq_db_update();
-    },300);
+    },1000);
   };
 }
 
@@ -238,7 +238,7 @@ window.tiq_db_update = function () {
     setTimeout(function (){
       udb("POLLING FOR FIRST EVENT");
       window.tiq_db_update();
-    },300);
+    },1000);
   }
   else {
     // TODO: See if this causes issues
@@ -260,7 +260,7 @@ function init() {
     udb("utag is not ready.");
     setTimeout(function (){
       init();
-    },300);
+    },1000);
   }
 }
 init();
