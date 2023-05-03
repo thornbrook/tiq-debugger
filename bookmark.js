@@ -28,13 +28,13 @@ function renderOutput(views,links) {
 }
 
 
-function udb(a) {
+function udb(a,b) {
   if (window.utagmondb === false) {
     return;
   }
   if (window.utagmondb === true) {
     try {
-      console.log(udb_prefix,a);
+      b ? console.log(udb_prefix,a,b) : console.log(udb_prefix,a)
     } catch (e) {}
   }
 }
@@ -163,33 +163,14 @@ function get_live_events(utag_view, utag_link, preserve_log) {
       var prev;
       for (
         var event_num = 0; event_num < window.opener.utag.db_log.length; event_num++
-      ) {
+      ){
         var l = window.opener.utag.db_log[event_num];
-        if (
-          typeof l == "object" &&
-          (window.is_first_run || !l["tealium_preserved"]) &&
-          is_event_object("view", l, prev)
-        ) {
+        var method = is_event_object("view",l,prev) ? "view" : (is_event_object("link",l,prev) ? "link" : null);
+        if ( typeof l == "object" && (window.is_first_run || !l["tealium_preserved"]) && method !== null ) {
           l["tealium_preserved"] = true;
           var ev = new Object();
           ev.data = copyEventData(l);
-          ev.method = "view";
-          ev.url = window.opener.document.URL || "";
-          this_event_list[this_event_list.length] = ev;
-          var consoleGrouping = udb_prefix + " tealium_event = " + ev.data["tealium_event"] + " (" + ev.method + ")";
-          console.groupCollapsed(consoleGrouping);
-          console.table(ev.data);
-          console.groupEnd(consoleGrouping);
-        }
-        if (
-          typeof l == "object" &&
-          (window.is_first_run || !l["tealium_preserved"]) &&
-          is_event_object("link", l, prev)
-        ) {
-          l["tealium_preserved"] = true;
-          var ev = new Object();
-          ev.data = copyEventData(l);
-          ev.method = "link";
+          ev.method = method;
           ev.url = window.opener.document.URL || "";
           this_event_list[this_event_list.length] = ev;
           var consoleGrouping = udb_prefix + " tealium_event = " + ev.data["tealium_event"] + " (" + ev.method + ")";
@@ -201,15 +182,7 @@ function get_live_events(utag_view, utag_link, preserve_log) {
       }
     }
   }
-  // Hidden event attribute ?
-  // Is this for UI hiding maybe?
-  // for (var i = 0; i < this_event_list.length; i++) {
-  //   var m = this_event_list[i].method;
-  //   if (!window[m] && m != "utag.data") {
-  //     udb("event is hidden");
-  //     this_event_list[i].hidden = true;
-  //   }
-  // }
+
   var rv = this_event_list.slice(0);
   if (window.static_event_list.length > 0) {
     rv.unshift(static_event_list[0]);
@@ -230,10 +203,34 @@ function hijack_track() {
   };
 }
 
+function arraysEqual(a, b) {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (a.length !== b.length) return false;
+
+  // If you don't care about the order of the elements inside
+  // the array, you should sort both arrays here.
+  // Please note that calling sort on an array will modify that array.
+  // you might want to clone your array first.
+
+  for (var i = 0; i < a.length; ++i) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+window.tiq_history = window.tiq_history || [];
+
 window.tiq_db_update = function () {
   // udb("UPDATE CALLED");
   var events = get_live_events(null,null,true);
-  //udb(events);
+  let eventHistory = events.map(({data})=>data);
+
+  if(!arraysEqual(eventHistory,window.tiq_history)) {
+    window.tiq_history = eventHistory;
+    udb("HISTORY:", eventHistory);
+  }
+
   if(event_history.length === 0) {
     setTimeout(function (){
       udb("POLLING FOR FIRST EVENT");
