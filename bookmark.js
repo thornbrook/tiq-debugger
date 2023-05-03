@@ -137,6 +137,7 @@ function get_static_events(preserve_log) {
     ev.data = copyEventData(window.opener.utag.data);
     ev.code = "utag_view";
     ev.method = "utag.data";
+    ev.data["tealium_event"] = "utag.data";
     ev.url = window.opener.document.URL || "";
     this_event_list[this_event_list.length] = ev;
   }
@@ -224,7 +225,7 @@ window.tiq_history = window.tiq_history || [];
 window.tiq_db_update = function () {
   // udb("UPDATE CALLED");
   var events = get_live_events(null,null,true);
-  let eventHistory = events.map(({data})=>data);
+  let eventHistory = events.map(({data})=>({ [data.tealium_event]: data }));
 
   if(!arraysEqual(eventHistory,window.tiq_history)) {
     window.tiq_history = eventHistory;
